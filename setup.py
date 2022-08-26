@@ -7,7 +7,7 @@ here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / "README.md").read_text(encoding="utf-8")
 
 setup(
-    name="shuii-tool",
+    name="pyshuii",
     version="0.0.3",
     description="Multi-chain NFT metadata aggregator",
     long_description=long_description,
@@ -17,8 +17,8 @@ setup(
     classifiers=[
     ],
     keywords="nft, nfts, shuii, metadata, aggregator, rarity",
-    package_dir={"shuii": "shuii"},
-    packages=find_packages(include=["shuii*"]),
+    package_dir={"pyshuii": "pyshuii"},
+    packages=find_packages(include=["pyshuii*"]),
     python_requires=">=3.6, <4",
     install_requires=[
         "cosmpy",

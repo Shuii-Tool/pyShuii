@@ -1,118 +1,68 @@
 # EthereumRC721 Standard
-
-import json
 import asyncio
 import aiohttp
 import ssl
-import certifi
 import time
-import os
 
-from decouple import config
 from functools import cmp_to_key
-from shuii.aggregate.clients import EthereumClient
-from shuii.aggregate.indexers import MultiDocument
 
-SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
+from pyshuii.clients import EthereumClient
+from pyshuii.indexers import MultiDocument
 
-weights = []
-aggregate = {}
-invalids = []
-composed = []
+from pyshuii.retrievers.Main import Main
 
 proxies = ['socks5://192.111.129.145:16894',
            'socks5://67.201.33.10:25283',
            'socks5://98.162.25.23:4145']
 
 
-async def count(token_id, metadata):
-    attributes = metadata["attributes"]
+class erc721(Main):
+    def __init__(self, alchemy_api_key, max_retries=500):
+        super().__init__()
 
-    attributes.append({
-        'trait_type': 'num_traits',
-        'value': len([attrib for attrib in attributes if attrib['value']])
-    })
+        self.client = EthereumClient(alchemy_api_key)
+        self.indexer = MultiDocument(max_retries)
+        self.address = None
 
-    weights.append({
-        "token_id": token_id,
-        "attributes": attributes
-    })
+    async def count(self, token_id, metadata):
+        attributes = metadata["attributes"]
+        await self.prep(token_id, attributes)
 
-    for i in attributes:
-        if not i["trait_type"] in aggregate:
-            aggregate[i["trait_type"]] = {}
+    async def execute(self):
+        start_time = time.time()
+        collection_metadata = self.client.getCollectionMetadata(self.address)
 
-        if not i["value"] in aggregate[i["trait_type"]]:
-            aggregate[i["trait_type"]][i["value"]] = {
-                "count": 0,
-                "weight": 0
-            }
+        token_uri = collection_metadata['token_uri'].replace(
+            "ipfs://", "https://gateway.ipfs.io/ipfs/")
+        suffix = collection_metadata['suffix']
 
-        aggregate[i["trait_type"]][i["value"]]["count"] += 1
+        print("--- GATHER ---")
+        await asyncio.gather(*[self.indexer.create_job(token_id, "%s/%s%s" % (token_uri, token_id, suffix)) for token_id in range(collection_metadata['starting_index'], collection_metadata['starting_index'] + collection_metadata['total_supply'])])
+        await self.indexer.execute_jobs()
 
+        print("--- COUNTING ---")
+        await asyncio.gather(*[self.count(token_id, self.indexer.results[token_id]) for token_id in self.indexer.results])
 
-async def assign(attribute, limit):
-    attribute["weight"] = round(1 / (attribute["count"] / limit), 3)
+        for attributes in self.aggregate.values():
+            for attribute in attributes.values():
+                self.composed.append(attribute)
 
+        print("--- WEIGHING ---")
+        await asyncio.gather(*[self.assign_weight(attribute, collection_metadata['total_supply']) for attribute in self.composed])
 
-def weigh(metadata):
-    if "weight" in metadata.keys():
-        return metadata["weight"]
+        print("--- SORTING ---")
+        self.weights.sort(key=cmp_to_key(self.compare), reverse=True)
 
-    weight = 0
-    for attribute in metadata["attributes"]:
-        weight += aggregate[attribute["trait_type"]
-                            ][attribute["value"]]["weight"]
+        print("--- RANKING ---")
+        self.rank()
 
-    metadata["weight"] = weight
-    return weight
+        finish_time = time.time()
+        finalized_time = finish_time - start_time
 
+        print("--- DONE ---")
+        print("--- %s seconds ---" % (finalized_time))
 
-def compare(a, b):
-    return weigh(a) - weigh(b)
-
-
-async def main(address, retry_limit=500):
-    start_time = time.time()
-    ALCHEMY_API_KEY = config('ALCHEMY_API_KEY')
-    ethClient = EthereumClient(ALCHEMY_API_KEY)
-    indexer = MultiDocument(retry_limit)
-    collection_metadata = ethClient.getCollectionMetadata(address)
-    token_uri = collection_metadata['token_uri'].replace(
-        "ipfs://", "https://gateway.ipfs.io/ipfs/")
-    suffix = collection_metadata['suffix']
-
-    print("--- GATHER ---")
-    await asyncio.gather(*[indexer.create_job(token_id, "%s/%s%s" % (token_uri, token_id, suffix)) for token_id in range(collection_metadata['starting_index'], collection_metadata['starting_index'] + collection_metadata['total_supply'])])
-    await indexer.execute_jobs()
-
-    print("--- COUNTING ---")
-    await asyncio.gather(*[count(token_id, indexer.results[token_id]) for token_id in indexer.results])
-    # await asyncio.gather(*[count(token_uri, num, session, suffix, retry_limit) for num in range(collection_metadata['starting_index'], collection_metadata['starting_index'] + collection_metadata['total_supply'])])
-
-    for attributes in aggregate.values():
-        for attribute in attributes.values():
-            composed.append(attribute)
-
-    print("--- WEIGHING ---")
-    await asyncio.gather(*[assign(attribute, collection_metadata['total_supply']) for attribute in composed])
-
-    print("--- SORTING ---")
-    weights.sort(key=cmp_to_key(compare), reverse=True)
-
-    print("--- RANKING ---")
-    current_rank, prev_weight = 1, weights[0]['weight']
-    for weightIndex in range(len(weights)):
-        if weights[weightIndex]['weight'] != prev_weight:
-            prev_weight = weights[weightIndex]['weight']
-            current_rank += 1
-
-        weights[weightIndex]['rank'] = current_rank
-
-    finish_time = time.time()
-    finalized_time = finish_time - start_time
-    with open("%s.json" % (collection_metadata['name'].lower().replace(" ", "")), "w") as dumped:
-        dumped.write(json.dumps({
+        return {
             'network': "ETH",
             'address': collection_metadata['address'],
             'project_name': collection_metadata['name'],
@@ -124,19 +74,17 @@ async def main(address, retry_limit=500):
             'time_started': start_time,
             'time_finalized': finish_time,
             'time_to_sync': finalized_time,
-            'aggregate': aggregate,
-            'weights': weights,
-        }))
+            'aggregate': self.aggregate,
+            'weights': self.weights,
+        }
 
-    print("--- DONE ---")
-    print("--- %s seconds ---" % (finalized_time))
+    def run(self, address):
+        super().refresh()
+        self.indexer.clear_results()
+        self.address = address
 
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(self.execute())
+        loop.close()
 
-def run(address, retry_limit):
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main(address, retry_limit))
-    loop.close()
-
-
-run("0x8a90cab2b38dba80c64b7734e58ee1db38b8992e", retry_limit=100)
-#print("INVALIDS:", invalids)
+        return result

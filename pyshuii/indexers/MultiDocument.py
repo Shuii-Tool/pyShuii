@@ -1,4 +1,3 @@
-import uuid
 import json
 import asyncio
 import aiohttp
@@ -40,8 +39,12 @@ class MultiDocument:
             self.jobs = {}
             print("MultiDocument: Jobs have been executed")
 
+    def clear_results(self):
+        self.results = {}
+
     @staticmethod
     async def retrieve(session, ssl, job_id, job, retry_limit, results):
+        error_message = None
         for attempt in range(retry_limit):
             try:
                 async with session.get(job, ssl=ssl) as response:
@@ -52,7 +55,8 @@ class MultiDocument:
                     decoded_res = json.loads(res.decode("utf8"))
                     results[job_id] = decoded_res
                     return
-            except:
+            except e:
+                error_message = e
                 continue
 
-        print(f'MultiDocument Retrieval Error: {job_id} - {job}')
+        print(f'Error: MultiDocument: {job_id} - {job}: {error_message}')

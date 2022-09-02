@@ -78,3 +78,7 @@ Eth address - 0xbA842b7DA417Ba762D75e8F99e11c2980a8F8051
 ```sh
 python3 setup.py install
 ```
+
+```sh
+python3 -m twine upload --repository pypi dist/*
+```

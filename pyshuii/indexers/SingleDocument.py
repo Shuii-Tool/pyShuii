@@ -46,10 +46,12 @@ class SingleDocument:
             except:
                 raise Exception("SingleDocument: Unable to retrieve document")
 
+    def clear_results(self):
+        self.results = {}
+
     @staticmethod
     async def retrieve(document, job_id, job, results):
         try:
             results.append(document[job_id])
         except:
-            dsw
-            print(f'SingleDocument: {job_id}: {job}')
+            print(f'SingleDocument: {job_id} - {job}')

@@ -8,12 +8,12 @@ long_description = (here / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="pyshuii",
-    version="0.0.3",
+    version="0.0.5",
     description="Multi-chain NFT metadata aggregator",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="",
-    author="pmali",
+    url="https://github.com/Shuii-Tool",
+    author="prmali",
     classifiers=[
     ],
     keywords="nft, nfts, shuii, metadata, aggregator, rarity",

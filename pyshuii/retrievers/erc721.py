@@ -3,25 +3,26 @@ import asyncio
 import aiohttp
 import ssl
 import time
+import tqdm
 
 from functools import cmp_to_key
+
+from pyshuii.utils import traceCast
 
 from pyshuii.clients import EthereumClient
 from pyshuii.indexers import MultiDocument
 
 from pyshuii.retrievers.Main import Main
 
-proxies = ['socks5://192.111.129.145:16894',
-           'socks5://67.201.33.10:25283',
-           'socks5://98.162.25.23:4145']
+import os
 
 
 class erc721(Main):
-    def __init__(self, alchemy_api_key, max_retries=500):
+    def __init__(self, alchemy_api_key, max_retries=500, proxies=''):
         super().__init__()
 
         self.client = EthereumClient(alchemy_api_key)
-        self.indexer = MultiDocument(max_retries)
+        self.indexer = MultiDocument(max_retries, proxies=proxies)
         self.address = None
 
     async def count(self, token_id, metadata):
@@ -36,30 +37,92 @@ class erc721(Main):
             "ipfs://", "https://gateway.ipfs.io/ipfs/")
         suffix = collection_metadata['suffix']
 
-        print("--- GATHER ---")
-        await asyncio.gather(*[self.indexer.create_job(token_id, "%s/%s%s" % (token_uri, token_id, suffix)) for token_id in range(collection_metadata['starting_index'], collection_metadata['starting_index'] + collection_metadata['total_supply'])])
+        await traceCast(
+            desc="Initialize jobs",
+            fn=self.indexer.create_job,
+            tasks=[{
+                'job_id': token_id,
+                'job': "%s/%s%s" % (token_uri, token_id, suffix)
+            } for token_id in range(
+                collection_metadata['starting_index'],
+                collection_metadata['starting_index'] +
+                collection_metadata['total_supply']
+            )]
+        )
+
+        # gather_tasks = [
+        #     asyncio.create_task(
+        #         self.indexer.create_job(
+        #             job_id=token_id,
+        #             job="%s/%s%s" % (token_uri, token_id, suffix)
+        #         )
+        #     ) for token_id in range(
+        #         collection_metadata['starting_index'],
+        #         collection_metadata['starting_index'] +
+        #         collection_metadata['total_supply']
+        #     )
+        # ]
+        # _ = [
+        #     await t for t in tqdm.tqdm(
+        #         asyncio.as_completed(gather_tasks),
+        #         total=collection_metadata['total_supply'],
+        #         desc="Initialize jobs"
+        #     )
+        # ]
+        # await asyncio.gather(*[self.indexer.create_job(token_id, "%s/%s%s" % (token_uri, token_id, suffix)) for token_id in range(collection_metadata['starting_index'], collection_metadata['starting_index'] + collection_metadata['total_supply'])])
         await self.indexer.execute_jobs()
 
-        print("--- COUNTING ---")
-        await asyncio.gather(*[self.count(token_id, self.indexer.results[token_id]) for token_id in self.indexer.results])
+        await traceCast(
+            desc="Count results",
+            fn=self.count,
+            tasks=[{
+                'token_id': token_id,
+                'metadata': self.indexer.results[token_id]
+            } for token_id in self.indexer.results]
+        )
+
+        # count_tasks = [
+        #     asyncio.create_task(
+        #         self.count(
+        #             token_id=token_id,
+        #             metadata=self.indexer.results[token_id]
+        #         )
+        #     ) for token_id in self.indexer.results
+        # ]
+        # _ = [
+        #     await t for t in tqdm.tqdm(
+        #         asyncio.as_completed(count_tasks),
+        #         total=len(self.indexer.results),
+        #         desc="Count results"
+        #     )
+        # ]
+        # await asyncio.gather(*[self.count(token_id, self.indexer.results[token_id]) for token_id in self.indexer.results])
 
         for attributes in self.aggregate.values():
             for attribute in attributes.values():
                 self.composed.append(attribute)
 
-        print("--- WEIGHING ---")
-        await asyncio.gather(*[self.assign_weight(attribute, collection_metadata['total_supply']) for attribute in self.composed])
+        await traceCast(
+            desc="Weigh collection",
+            fn=self.assign_weight,
+            tasks=[{
+                'attribute': attribute,
+                'limit': collection_metadata['total_supply']
+            } for attribute in self.composed]
+        )
+        # print("--- WEIGHING ---")
+        # await asyncio.gather(*[self.assign_weight(attribute, collection_metadata['total_supply']) for attribute in self.composed])
 
-        print("--- SORTING ---")
+        print("Sorting by weights")
         self.weights.sort(key=cmp_to_key(self.compare), reverse=True)
 
-        print("--- RANKING ---")
+        print("Assigning ranks")
         self.rank()
 
         finish_time = time.time()
         finalized_time = finish_time - start_time
 
-        print("--- DONE ---")
+        print("Done")
         print("--- %s seconds ---" % (finalized_time))
 
         return {

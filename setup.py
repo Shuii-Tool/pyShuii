@@ -8,7 +8,7 @@ long_description = (here / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="pyshuii",
-    version="0.0.5",
+    version="0.0.7",
     description="Multi-chain NFT metadata aggregator",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -25,6 +25,7 @@ setup(
         "web3",
         "asyncio",
         "aiohttp",
+        "tqdm"
     ],
     extras_require={
         "dev": [

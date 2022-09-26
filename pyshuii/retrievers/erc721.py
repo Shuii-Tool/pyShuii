@@ -70,7 +70,7 @@ class erc721(Main):
         #     )
         # ]
         # await asyncio.gather(*[self.indexer.create_job(token_id, "%s/%s%s" % (token_uri, token_id, suffix)) for token_id in range(collection_metadata['starting_index'], collection_metadata['starting_index'] + collection_metadata['total_supply'])])
-        await self.indexer.execute_jobs()
+        await self.indexer.execute_jobs(fn=None)
 
         await traceCast(
             desc="Count results",

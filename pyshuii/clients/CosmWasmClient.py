@@ -3,19 +3,19 @@ from cosmpy.aerial.client import LedgerClient, NetworkConfig
 from cosmpy.aerial.contract import LedgerContract
 
 configs = {
-    'juno-1': {
+    'JUNO-1': {
         "url": "rest+https://lcd.junomint.com",
         "fee_minimum_gas_price": 0.0025,
         "fee_denomination": "ujuno",
         "staking_denomination": "ujuno",
     },
-    'stargaze-1': {
+    'STARGAZE-1': {
         "url": "rest+https://rest.stargaze-apis.com/",
         "fee_minimum_gas_price": 0.0025,
         "fee_denomination": "ustars",
         "staking_denomination": "ustars",
     },
-    'osmosis-1': {
+    'OSMOSIS-1': {
         "url": "rpc+https://rpc.osmosis.interbloc.org",
         "fee_minimum_gas_price": 0.0001,
         "fee_denomination": "uosmo",
@@ -95,6 +95,9 @@ class CosmWasmClient:
                 }
             })
 
+            print(token_metadata)
+            return {}
+
             return {
                 'address': address,
                 'name': contract_info['name'],
@@ -104,7 +107,8 @@ class CosmWasmClient:
                 'total_supply': 0,
                 'suffix': None
             }
-        except:
+        except e:
+            print(e)
             raise Exception(
                 "CosmWasmClient: Unable to get collection metadata. Whoopsies")
 

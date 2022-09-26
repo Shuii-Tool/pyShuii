@@ -25,16 +25,23 @@ class cw721(Main):
         token_id = metadata['edition'] or token_id
         attributes = metadata["attributes"]
 
-        super().prep(token_id, attributes, self.weights, self.aggregate)
+        await self.prep(token_id, attributes)
 
     # detect project name
     async def execute(self):
         start_time = time.time()
         collection_metadata = self.client.getCollectionMetadata(self.address)
 
+        # if not tokenuri - onchain metadata
+        # if token uri - 1.json?
+        # else singledocument
+
         token_uri = collection_metadata['token_uri'].replace(
             "ipfs://", "https://gateway.ipfs.io/ipfs/")
         suffix = collection_metadata['suffix']
+
+        print(collection_metadata, token_uri, suffix)
+        return
 
         async with aiohttp.ClientSession(trust_env=True) as session:
             async with session.get(url=collection_metadata['token_uri'], ssl=SSL_CONTEXT) as response:
@@ -82,18 +89,21 @@ class cw721(Main):
         }
 
     def run(self, chain, address):
-        super().clear()
-
-        self.client = CosmWasmClient(self.chain)
+        super().refresh()
+        self.client = CosmWasmClient(chain)
         self.chain = chain
         self.address = address
 
         loop = asyncio.get_event_loop()
-        result = loop.run_until_complete(
-            self.execute())
+        result = loop.run_until_complete(self.execute())
         loop.close()
         return result
 
 
 #run('juno1e229el8t4lu4rx7xeekc77zspxa2gz732ld0e6a5q0sr0l3gm78stuvc5g', 'juno-1')
 #print("INVALIDS:", invalids)
+"""
+juno1za0uemnhzwkjrqwguy34w45mqdlzfm9hl4s5gp5jtc0e4xvkrwjs6s2rt4
+
+
+"""

@@ -29,7 +29,7 @@ class MultiDocument(ProxyClient):
 
         self.jobs[job_id] = job
 
-    async def execute_jobs(self):
+    async def execute_jobs(self, fn):
         # sem = asyncio.Semaphore(10)
         # connector = aiohttp.TCPConnector(
         #     limit_per_host=20
@@ -40,7 +40,7 @@ class MultiDocument(ProxyClient):
             self.session = session
             await traceCast(
                 desc="Execute jobs",
-                fn=MultiDocument.retrieve,
+                fn=fn or MultiDocument.retrieve,
                 tasks=[{
                     'session': self.session,
                     # 'sem': sem,

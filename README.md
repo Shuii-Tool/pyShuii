@@ -65,13 +65,13 @@ The `main` function takes in 2 parameters
 python3 retrieve.py --name 'NFT project' --tokenid 3
 ```
 
-### Whats left
+### whats left
 
--   Get rarity by rarity ID
--   Interface to visualize
--   _containerize_
--   improve efficiency
--   work around brute force retry method
+- Get rarity by rarity ID
+- Interface to visualize
+- _containerize_
+- improve efficiency
+- work around brute force retry method
 
 Eth address - 0xbA842b7DA417Ba762D75e8F99e11c2980a8F8051
 
@@ -82,3 +82,7 @@ python3 setup.py install
 ```sh
 python3 -m twine upload --repository pypi dist/*
 ```
+
+### to do
+
+github workflow for package publishing & layer uploading

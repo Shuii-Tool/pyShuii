@@ -6,17 +6,19 @@ import ssl
 import certifi
 import tqdm
 
+from pyshuii.utils import traceCast
+
 
 class SingleDocument:
-    def __init__(self, document):
-        self.proxies = []
+    def __init__(self, resource):
+        self.resource = resource
         self.SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
         self.jobs = {}
-        self.document = None
+        self.document = []
         self.results = []
 
     async def create_job(self, job):
-        job_id = uuid4()
+        job_id = uuid.uuid4()
         self.jobs[job_id] = job
 
         return job_id
@@ -27,50 +29,73 @@ class SingleDocument:
 
         self.jobs[job_id] = job
 
-    async def execute_jobs(self):
-        sem = asyncio.Semaphore(5)
-        async with aiohttp.ClientSession(true_env=True) as session:
+    async def execute_jobs(self, fn):
+        async with aiohttp.ClientSession(trust_env=True) as session:
             try:
-                async with session.get(document, ssl=self.SSL_CONTEXT) as response:
+                async with session.get(self.resource, ssl=self.SSL_CONTEXT) as response:
+                    if not response.status == 200:
+                        raise Exception(
+                            f"SingleDocument: [Status] {response.status}")
+
                     res = await response.read()
                     self.document = json.loads(res.decode("utf8"))
-
-                    tasks = [
-                        asyncio.create_task(
-                            SingleDocument.retrieve(
-                                document=self.document,
-                                job_id=job_id,
-                                job=self.jobs[job_id],
-                                results=self.results
-                            )
-                        ) for job_id in self.jobs
-                    ]
-
-                    traceable_tasks = [
-                        await t for t in tqdm.tqdm(
-                            asyncio.as_completed(tasks),
-                            total=len(tasks),
-                            desc="Execute jobs"
-                        )
-                    ]
-
-                    # await asyncio.gather(*[
-                    #     SingleDocument.retrieve(
-                    #         document=self.document,
-                    #         job_id=job_id,
-                    #         job=self.jobs[job_id],
-                    #         results=self.results
-                    #     ) for job_id in self.jobs]
-                    # )
+                    await traceCast(
+                        desc="Execute jobs",
+                        fn=fn or SingleDocument.retrieve,
+                        tasks=[{
+                            'document': self.document,
+                            'job_id': job_id,
+                            'job': self.jobs[job_id],
+                            'results': self.results
+                        } for job_id in self.jobs]
+                    )
                     self.jobs = {}
                     print("SingleDocument: Jobs have been executed")
             except:
                 raise Exception("SingleDocument: Unable to retrieve document")
+        # sem = asyncio.Semaphore(5)
+        # async with aiohttp.ClientSession(true_env=True) as session:
+        #     try:
+        #         async with session.get(document, ssl=self.SSL_CONTEXT) as response:
+        #             res = await response.read()
+        #             self.document = json.loads(res.decode("utf8"))
+
+        #             tasks = [
+        #                 asyncio.create_task(
+        #                     SingleDocument.retrieve(
+        #                         document=self.document,
+        #                         job_id=job_id,
+        #                         job=self.jobs[job_id],
+        #                         results=self.results
+        #                     )
+        #                 ) for job_id in self.jobs
+        #             ]
+
+        #             traceable_tasks = [
+        #                 await t for t in tqdm.tqdm(
+        #                     asyncio.as_completed(tasks),
+        #                     total=len(tasks),
+        #                     desc="Execute jobs"
+        #                 )
+        #             ]
+
+        #             # await asyncio.gather(*[
+        #             #     SingleDocument.retrieve(
+        #             #         document=self.document,
+        #             #         job_id=job_id,
+        #             #         job=self.jobs[job_id],
+        #             #         results=self.results
+        #             #     ) for job_id in self.jobs]
+        #             # )
+        #             self.jobs = {}
+        #             print("SingleDocument: Jobs have been executed")
+        #     except:
+        #         raise Exception("SingleDocument: Unable to retrieve document")
 
     def clear_results(self):
         self.results = {}
 
-    @staticmethod
+    @ staticmethod
     async def retrieve(document, job_id, job, results):
         try:
             results.append(document[job_id])

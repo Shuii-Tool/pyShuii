@@ -78,4 +78,4 @@ class EthereumClient:
                 'suffix': suffix,
             }
         except:
-            raise Exception("Unable to get collection metadata.")
+            raise Exception("Unable to get collection metadata. Whoopsies")

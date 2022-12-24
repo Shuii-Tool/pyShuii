@@ -21,11 +21,11 @@ setup(
     packages=find_packages(include=["pyshuii*"]),
     python_requires=">=3.6, <4",
     install_requires=[
-        "cosmpy",
-        "web3",
-        "asyncio",
-        "aiohttp",
-        "tqdm"
+        "cosmpy==0.5.1",
+        "web3==5.30.0",
+        "asyncio==3.4.3",
+        "aiohttp==3.8.1",
+        "tqdm==4.64.0"
     ],
     extras_require={
         "dev": [

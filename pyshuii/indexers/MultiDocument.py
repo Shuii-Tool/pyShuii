@@ -100,7 +100,8 @@ class MultiDocument(ProxyClient):
                 # async with sem:
                 async with session.get(job, ssl=ssl, proxy=proxy) as response:
                     if not response.status == 200:
-                        raise Exception("[Status] {response.status}")
+                        raise Exception(
+                            f"MultiDocument #{job_id}: [Status] {response.status}")
 
                     res = await response.read()
                     decoded_res = json.loads(res.decode("utf8"))

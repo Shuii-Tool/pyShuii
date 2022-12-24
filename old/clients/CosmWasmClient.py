@@ -3,19 +3,19 @@ from cosmpy.aerial.client import LedgerClient, NetworkConfig
 from cosmpy.aerial.contract import LedgerContract
 
 configs = {
-    'JUNO-1': {
+    'juno-1': {
         "url": "rest+https://api.juno.bh.rocks",
         "fee_minimum_gas_price": 0.0025,
         "fee_denomination": "ujuno",
         "staking_denomination": "ujuno",
     },
-    'STARGAZE-1': {
+    'stargaze-1': {
         "url": "rest+https://rest.stargaze-apis.com/",
         "fee_minimum_gas_price": 0.0025,
         "fee_denomination": "ustars",
         "staking_denomination": "ustars",
     },
-    'OSMOSIS-1': {
+    'osmosis-1': {
         "url": "rest+https://rest-osmosis.ecostake.com",
         "fee_minimum_gas_price": 0.0001,
         "fee_denomination": "uosmo",
@@ -63,7 +63,7 @@ configs = {
 
 class CosmWasmClient:
     def __init__(self, chain_id):
-        config = configs[chain_id.upper()]
+        config = configs[chain_id.lower()]
         self.ledger = LedgerClient(
             NetworkConfig(
                 chain_id=chain_id,
@@ -73,55 +73,44 @@ class CosmWasmClient:
                 staking_denomination=config['staking_denomination'],
             )
         )
-        self.contract = None
 
     def getCollectionMetadata(self, address):
         try:
-            self.contract = LedgerContract(
+            contract = LedgerContract(
                 path=None, client=self.ledger, address=address)
 
-            contract_info = self.contract.query({
+            contract_info = contract.query({
                 'contract_info': {},
             })
 
-            token = self.contract.query({
+            token = contract.query({
                 'all_tokens': {
                     'limit': 1
                 }
             })['tokens'][0]
 
-            total_supply = self.contract.query({
-                'num_tokens': {}
-            })
-
-            token_metadata = self.contract.query({
+            token_metadata = contract.query({
                 'nft_info': {
                     'token_id': token
                 }
             })
 
-            # paginate tokens
-
-            token_uri = self.standardize_uri(token_metadata['token_uri'])
-
             return {
                 'address': address,
                 'name': contract_info['name'],
                 'symbol': contract_info['symbol'],
-                'token_uri': token_uri,
+                'token_uri': self.standardize_uri(token_metadata['token_uri']),
                 'starting_index': token[-1],
-                'total_supply': total_supply,
-                'suffix': (token_uri and token_uri[len(token_uri) - 5:] == '.json') and '.json' or None
+                'total_supply': 0,
+                'suffix': None
             }
-        except Exception as e:
-            print(e)
+        except:
             raise Exception(
-                "CosmWasmClient: Unable to get collection metadata.")
+                "CosmWasmClient: Unable to get collection metadata. Whoopsies")
 
     def standardize_uri(self, uri):
-        if uri:
-            uri = uri.split('/')
-            uri = '/'.join(uri[:-1])
+        uri = uri.split('/')
+        uri = '/'.join(uri[:-1])
         return uri
 
         # if uri[len(uri) - 5:] == '.json':

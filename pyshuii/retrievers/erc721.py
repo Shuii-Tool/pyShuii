@@ -110,20 +110,24 @@ class erc721(Main):
                 'limit': collection_metadata['total_supply']
             } for attribute in self.composed]
         )
-        # print("--- WEIGHING ---")
+        # print("*** WEIGHING ***")
         # await asyncio.gather(*[self.assign_weight(attribute, collection_metadata['total_supply']) for attribute in self.composed])
 
-        print("Sorting by weights")
+        print("*** SORTING ***")
+        print("Sorting assets by weight")
         self.weights.sort(key=cmp_to_key(self.compare), reverse=True)
 
-        print("Assigning ranks")
+        print("*** RANKING ***")
+        print("Assigning ranks to assets")
         self.rank()
 
         finish_time = time.time()
         finalized_time = finish_time - start_time
 
         print("Done")
-        print("--- %s seconds ---" % (finalized_time))
+        print("*** %s SECONDS ***" % (finalized_time))
+        print("*** %s DROPPED ***" %
+              collection_metadata['total_supply'] - len(self.weights))
 
         return {
             'network': "ETH",
@@ -141,7 +145,7 @@ class erc721(Main):
             'weights': self.weights,
         }
 
-    def run(self, address):
+    def run(self, chain, address):
         super().refresh()
         self.indexer.clear_results()
         self.address = address

@@ -1,5 +1,3 @@
-import os
-import json
 from web3 import Web3
 
 erc721abi = [
@@ -74,7 +72,7 @@ class EthereumClient:
                 'symbol': symbol,
                 'token_uri': token_uri,
                 'starting_index': starting_index,
-                'total_supply': total_supply,
+                'total_supply': int(total_supply),
                 'suffix': suffix,
             }
         except:

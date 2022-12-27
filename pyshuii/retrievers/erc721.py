@@ -14,8 +14,6 @@ from pyshuii.indexers import MultiDocument
 
 from pyshuii.retrievers.Main import Main
 
-import os
-
 
 class erc721(Main):
     def __init__(self, alchemy_api_key, max_retries=500, proxies=''):
@@ -30,7 +28,7 @@ class erc721(Main):
         await self.prep(token_id, attributes)
 
     async def execute(self):
-        start_time = time.time()
+        t0 = time.time()
         collection_metadata = self.client.getCollectionMetadata(self.address)
 
         token_uri = collection_metadata['token_uri'].replace(
@@ -77,8 +75,8 @@ class erc721(Main):
             fn=self.count,
             tasks=[{
                 'token_id': token_id,
-                'metadata': self.indexer.results[token_id]
-            } for token_id in self.indexer.results]
+                'metadata': metadata
+            } for token_id, metadata in enumerate(self.indexer.results)]
         )
 
         # count_tasks = [
@@ -121,13 +119,13 @@ class erc721(Main):
         print("Assigning ranks to assets")
         self.rank()
 
-        finish_time = time.time()
-        finalized_time = finish_time - start_time
+        t1 = time.time()
+        finalized_time = t1 - t0
 
         print("Done")
-        print("*** %s SECONDS ***" % (finalized_time))
-        print("*** %s DROPPED ***" %
-              collection_metadata['total_supply'] - len(self.weights))
+        print(f'*** {finalized_time} SECONDS ***')
+        print(
+            f'*** {collection_metadata["total_supply"] - len(self.weights)} DROPPED ***')
 
         return {
             'network': "ETH",
@@ -138,8 +136,8 @@ class erc721(Main):
             'total_supply': collection_metadata['total_supply'],
             'suffix': collection_metadata['suffix'],
             'starting_index': collection_metadata['starting_index'],
-            'time_started': start_time,
-            'time_finalized': finish_time,
+            'time_started': t0,
+            'time_finalized': t1,
             'time_to_sync': finalized_time,
             'aggregate': self.aggregate,
             'weights': self.weights,

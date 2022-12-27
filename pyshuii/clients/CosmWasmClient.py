@@ -4,7 +4,7 @@ from cosmpy.aerial.contract import LedgerContract
 
 configs = {
     'JUNO-1': {
-        "url": "rest+https://api.juno.bh.rocks",
+        "url": "rest+https://lcd-juno.itastakers.com",
         "fee_minimum_gas_price": 0.0025,
         "fee_denomination": "ujuno",
         "staking_denomination": "ujuno",
@@ -66,7 +66,7 @@ class CosmWasmClient:
         config = configs[chain_id.upper()]
         self.ledger = LedgerClient(
             NetworkConfig(
-                chain_id=chain_id,
+                chain_id=chain_id.lower(),
                 url=config['url'],
                 fee_minimum_gas_price=config['url'],
                 fee_denomination=config['fee_denomination'],
@@ -100,8 +100,6 @@ class CosmWasmClient:
                 }
             })
 
-            # paginate tokens
-
             token_uri = self.standardize_uri(token_metadata['token_uri'])
 
             return {
@@ -109,8 +107,8 @@ class CosmWasmClient:
                 'name': contract_info['name'],
                 'symbol': contract_info['symbol'],
                 'token_uri': token_uri,
-                'starting_index': token[-1],
-                'total_supply': total_supply,
+                'starting_index': int(token[-1]),
+                'total_supply': int(total_supply['count']),
                 'suffix': (token_uri and token_uri[len(token_uri) - 5:] == '.json') and '.json' or None
             }
         except Exception as e:
@@ -124,16 +122,30 @@ class CosmWasmClient:
             uri = '/'.join(uri[:-1])
         return uri
 
-        # if uri[len(uri) - 5:] == '.json':
-        #     uri = uri.split('/')
-        #     uri = '/'.join(uri[:-1])
-        #     return uri + '/_metadata.json'
-        # else:
-        #     uri = uri.split('/')
-        #     uri = '/'.join(uri[:-1])
-        #     return uri
+    @staticmethod
+    async def retrieve(contract, job_id, job, retry_limit, results, **kwargs):
+        error_message = None
+        for _ in range(retry_limit):
+            try:
+                token_id = contract.query({
+                    'all_tokens': {
+                        'start_after': job,
+                        'limit': 1,
+                    }
+                })['tokens'][0]
+                token = contract.query({
+                    'nft_info': {
+                        'token_id': token_id
+                    }
+                })
+                results[job_id] = token
+                return
+            except Exception as e:
+                error_message = e
+                continue
 
-        raise Exception("CosmWasmClient: Unexpected URI format")
+        print(
+            f'Error: CosmWasmClient.retrieve: {job_id} - {job}:\n{error_message}')
 
 
 # client = CosmWasmClient('juno-1')

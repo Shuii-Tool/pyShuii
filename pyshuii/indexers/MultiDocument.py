@@ -29,13 +29,7 @@ class MultiDocument(ProxyClient):
 
         self.jobs[job_id] = job
 
-    async def execute_jobs(self, fn):
-        # sem = asyncio.Semaphore(10)
-        # connector = aiohttp.TCPConnector(
-        #     limit_per_host=20
-        # )
-
-        # connector=connector
+    async def execute_jobs(self, fn, params):
         async with aiohttp.ClientSession(trust_env=True) as session:
             self.session = session
             await traceCast(
@@ -43,49 +37,16 @@ class MultiDocument(ProxyClient):
                 fn=fn or MultiDocument.retrieve,
                 tasks=[{
                     'session': self.session,
-                    # 'sem': sem,
                     'ssl': self.SSL_CONTEXT,
                     'proxy': f'{random.choice(self.proxies)}' if self.proxies else None,
                     'job_id': job_id,
-                    'job': self.jobs[job_id],
+                    'job': job,
                     'retry_limit': self.retry_limit,
-                    'results': self.results
-                } for job_id in self.jobs]
+                    'results': self.results,
+                    **params
+                } for job_id, job in self.jobs.items()]
             )
-            # tasks = [
-            #     asyncio.create_task(
-            #         MultiDocument.retrieve(
-            #             session=self.session,
-            #             sem=sem,
-            #             ssl=self.SSL_CONTEXT,
-            #             job_id=job_id,
-            #             job=self.jobs[job_id],
-            #             retry_limit=self.retry_limit,
-            #             results=self.results
-            #         )
-            #     ) for job_id in self.jobs
-            # ]
 
-            # traceable_tasks = [
-            #     await t for t in tqdm.tqdm(
-            #         asyncio.as_completed(tasks),
-            #         total=len(tasks),
-            #         desc="Execute jobs"
-            #     )
-            # ]
-            # asyncio.run(
-            #     traceable_tasks
-            # )
-            # await asyncio.gather(*[
-            #     MultiDocument.retrieve(
-            #         session=self.session,
-            #         ssl=self.SSL_CONTEXT,
-            #         job_id=job_id,
-            #         job=self.jobs[job_id],
-            #         retry_limit=self.retry_limit,
-            #         results=self.results
-            #     ) for job_id in self.jobs]
-            # )
             self.jobs = {}
             print("MultiDocument: Jobs have been executed")
 

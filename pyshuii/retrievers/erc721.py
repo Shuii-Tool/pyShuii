@@ -48,26 +48,6 @@ class erc721(Main):
             )]
         )
 
-        # gather_tasks = [
-        #     asyncio.create_task(
-        #         self.indexer.create_job(
-        #             job_id=token_id,
-        #             job="%s/%s%s" % (token_uri, token_id, suffix)
-        #         )
-        #     ) for token_id in range(
-        #         collection_metadata['starting_index'],
-        #         collection_metadata['starting_index'] +
-        #         collection_metadata['total_supply']
-        #     )
-        # ]
-        # _ = [
-        #     await t for t in tqdm.tqdm(
-        #         asyncio.as_completed(gather_tasks),
-        #         total=collection_metadata['total_supply'],
-        #         desc="Initialize jobs"
-        #     )
-        # ]
-        # await asyncio.gather(*[self.indexer.create_job(token_id, "%s/%s%s" % (token_uri, token_id, suffix)) for token_id in range(collection_metadata['starting_index'], collection_metadata['starting_index'] + collection_metadata['total_supply'])])
         await self.indexer.execute_jobs(fn=None)
 
         await traceCast(
@@ -78,23 +58,6 @@ class erc721(Main):
                 'metadata': metadata
             } for token_id, metadata in enumerate(self.indexer.results)]
         )
-
-        # count_tasks = [
-        #     asyncio.create_task(
-        #         self.count(
-        #             token_id=token_id,
-        #             metadata=self.indexer.results[token_id]
-        #         )
-        #     ) for token_id in self.indexer.results
-        # ]
-        # _ = [
-        #     await t for t in tqdm.tqdm(
-        #         asyncio.as_completed(count_tasks),
-        #         total=len(self.indexer.results),
-        #         desc="Count results"
-        #     )
-        # ]
-        # await asyncio.gather(*[self.count(token_id, self.indexer.results[token_id]) for token_id in self.indexer.results])
 
         for attributes in self.aggregate.values():
             for attribute in attributes.values():
@@ -108,8 +71,6 @@ class erc721(Main):
                 'limit': collection_metadata['total_supply']
             } for attribute in self.composed]
         )
-        # print("*** WEIGHING ***")
-        # await asyncio.gather(*[self.assign_weight(attribute, collection_metadata['total_supply']) for attribute in self.composed])
 
         print("*** SORTING ***")
         print("Sorting assets by weight")
@@ -122,7 +83,7 @@ class erc721(Main):
         t1 = time.time()
         finalized_time = t1 - t0
 
-        print("Done")
+        print("*** DONE ***")
         print(f'*** {finalized_time} SECONDS ***')
         print(
             f'*** {collection_metadata["total_supply"] - len(self.weights)} DROPPED ***')

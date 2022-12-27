@@ -53,44 +53,6 @@ class SingleDocument:
                     print("SingleDocument: Jobs have been executed")
             except:
                 raise Exception("SingleDocument: Unable to retrieve document")
-        # sem = asyncio.Semaphore(5)
-        # async with aiohttp.ClientSession(true_env=True) as session:
-        #     try:
-        #         async with session.get(document, ssl=self.SSL_CONTEXT) as response:
-        #             res = await response.read()
-        #             self.document = json.loads(res.decode("utf8"))
-
-        #             tasks = [
-        #                 asyncio.create_task(
-        #                     SingleDocument.retrieve(
-        #                         document=self.document,
-        #                         job_id=job_id,
-        #                         job=self.jobs[job_id],
-        #                         results=self.results
-        #                     )
-        #                 ) for job_id in self.jobs
-        #             ]
-
-        #             traceable_tasks = [
-        #                 await t for t in tqdm.tqdm(
-        #                     asyncio.as_completed(tasks),
-        #                     total=len(tasks),
-        #                     desc="Execute jobs"
-        #                 )
-        #             ]
-
-        #             # await asyncio.gather(*[
-        #             #     SingleDocument.retrieve(
-        #             #         document=self.document,
-        #             #         job_id=job_id,
-        #             #         job=self.jobs[job_id],
-        #             #         results=self.results
-        #             #     ) for job_id in self.jobs]
-        #             # )
-        #             self.jobs = {}
-        #             print("SingleDocument: Jobs have been executed")
-        #     except:
-        #         raise Exception("SingleDocument: Unable to retrieve document")
 
     def clear_results(self):
         self.results = {}
@@ -98,6 +60,7 @@ class SingleDocument:
     @ staticmethod
     async def retrieve(document, job_id, job, results):
         try:
-            results.append(document[job_id])
-        except:
+            results.append(document[job])
+        except Exception as e:
+            print(e)
             print(f'SingleDocument: {job_id} - {job}')

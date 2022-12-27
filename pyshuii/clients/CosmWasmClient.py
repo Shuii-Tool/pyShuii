@@ -23,43 +23,6 @@ configs = {
     }
 }
 
-# cfg = NetworkConfig(
-#     chain_id="juno-1",
-#     url="rest+https://lcd.junomint.com",
-#     fee_minimum_gas_price=0.0025,
-#     fee_denomination="ujuno",
-#     staking_denomination="ujuno",
-# )
-
-# ledger = LedgerClient(cfg)
-
-# balance = ledger.query_bank_balance(
-#     'juno14l0euhdndthtynfhkf74qpnlw45pfy6k0lktkn')
-
-# print(balance)
-
-# contract = LedgerContract(
-#     path=None, client=ledger, address="juno1e229el8t4lu4rx7xeekc77zspxa2gz732ld0e6a5q0sr0l3gm78stuvc5g")
-
-# `owner_of`, `approval`, `approvals`, `all_operators`, `num_tokens`, `contract_info`, `nft_info`, `all_nft_info`, `tokens`, `all_tokens`, `minter`
-# print(contract.query({
-#     'contract_info': {},
-# }))
-
-# print(contract.query({
-#     'all_tokens': {}
-# }))
-
-# print(contract.query({
-#     'all_nft_info': {}
-# }))
-
-# print(contract.query({
-#     'nft_info': {
-#         'token_id': 'JunoPunks.8'
-#     }
-# }))
-
 
 class CosmWasmClient:
     def __init__(self, chain_id):
@@ -100,7 +63,8 @@ class CosmWasmClient:
                 }
             })
 
-            token_uri = self.standardize_uri(token_metadata['token_uri'])
+            token_url = token_metadata['token_uri']
+            token_uri = self.standardize_uri(token_url)
 
             return {
                 'address': address,
@@ -109,7 +73,7 @@ class CosmWasmClient:
                 'token_uri': token_uri,
                 'starting_index': int(token[-1]),
                 'total_supply': int(total_supply['count']),
-                'suffix': (token_uri and token_uri[len(token_uri) - 5:] == '.json') and '.json' or None
+                'suffix': (token_url and token_url[len(token_url) - 5:] == '.json') and '.json' or None
             }
         except Exception as e:
             print(e)

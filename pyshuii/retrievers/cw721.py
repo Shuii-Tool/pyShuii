@@ -28,7 +28,6 @@ class cw721(Main):
     async def count(self, token_id, metadata):
         #metadata = metadata[token_id]
         token_id = metadata.get('edition', token_id)
-        print(metadata)
         attributes = metadata['extension']['attributes'] if 'extension' in metadata else metadata["attributes"]
 
         # standardize #1
@@ -53,8 +52,6 @@ class cw721(Main):
         if collection_metadata['token_uri']:
             token_uri = collection_metadata['token_uri'].replace(
                 "ipfs://", "https://gateway.ipfs.io/ipfs/")
-
-        #token_uri = 'https://hopegalaxy.mypinata.cloud/ipfs/QmTxetzZAqvhFrVVf1wQBx8hFrE8AnN85G5WvB489d81wV'
 
         document_type = 'MULTI'
         if token_uri:
@@ -121,20 +118,8 @@ class cw721(Main):
                         'job_id': job_id,
                         'job': job
                     } for job_id, job in enumerate(tasks)]
-                    #collection_metadata['starting_index'], collection_metadata['starting_index'] + collection_metadata['total_supply']
                 )
 
-                # await traceCast(
-                #     desc='Execute Jobs',
-                #     fn=CosmWasmClient.retrieve,
-                #     tasks=[{
-                #         'job_id': job_id,
-                #         'job': job,
-                #         'contract': self.client.contract,
-                #         'retry_limit': 1,
-                #         'results': indexer.results
-                #     } for job_id, job in indexer.jobs.items()]
-                # )
                 await indexer.execute_jobs(fn=CosmWasmClient.retrieve, params={"contract": self.client.contract})
 
         await traceCast(
@@ -143,7 +128,7 @@ class cw721(Main):
             tasks=[{
                 'token_id': token_id,
                 'metadata': metadata
-            } for token_id, metadata in indexer.results.items()]
+            } for token_id, metadata in (type(indexer.results) == type({})) and indexer.results.items() or enumerate(indexer.results)]
         )
 
         for attributes in self.aggregate.values():
@@ -166,35 +151,6 @@ class cw721(Main):
         print("*** RANKING ***")
         print("Assigning ranks to assets")
         self.rank()
-
-        # if doc type multi, if token uri query
-        # if doc type multi, if not token uri
-
-        # async with aiohttp.ClientSession(trust_env=True) as session:
-        #     async with session.get(url=collection_metadata['token_uri'], ssl=SSL_CONTEXT) as response:
-        #         res = await response.read()
-        #         metadata = json.loads(res.decode("utf8"))
-        #         collection_metadata['total_supply'] = len(metadata)
-        #         collection_metadata['name'] = ' '.join(
-        #             metadata[0]['name'].split(' ')[:-1])
-        #         collection_metadata['symbol'] = ''.join(
-        #             s[0] for s in collection_metadata['name'].split(' '))
-
-        #         print("*** COUNTING ***")
-        #         await asyncio.gather(*[self.count(token_id) for token_id in range(collection_metadata['total_supply'])])
-
-        #         for attributes in self.aggregate.values():
-        #             for attribute in attributes.values():
-        #                 self.composed.append(attribute)
-
-        #         print("*** WEIGHING ***")
-        #         await asyncio.gather(*[super().assign_weight(attribute, collection_metadata['total_supply']) for attribute in self.composed])
-
-        #         print("*** SORTING ***")
-        #         self.weights.sort(key=cmp_to_key(self.compare), reverse=True)
-
-        #         print("*** RANKING ***")
-        #         self.rank()
 
         t1 = time.time()
         finalized_time = t1 - t0
@@ -231,10 +187,3 @@ class cw721(Main):
         loop.close()
 
         return result
-
-
-# run('juno1e229el8t4lu4rx7xeekc77zspxa2gz732ld0e6a5q0sr0l3gm78stuvc5g', 'juno-1')
-# print("INVALIDS:", invalids)
-"""
-juno1za0uemnhzwkjrqwguy34w45mqdlzfm9hl4s5gp5jtc0e4xvkrwjs6s2rt4
-"""

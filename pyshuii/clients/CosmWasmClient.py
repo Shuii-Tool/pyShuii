@@ -146,9 +146,3 @@ class CosmWasmClient:
 
         print(
             f'Error: CosmWasmClient.retrieve: {job_id} - {job}:\n{error_message}')
-
-
-# client = CosmWasmClient('juno-1')
-# print(client.query('juno1e229el8t4lu4rx7xeekc77zspxa2gz732ld0e6a5q0sr0l3gm78stuvc5g'))
-# client = CosmWasmClient('stargaze-1')
-# print(client.query('stars1rz8jkes33jxqf79t707s68yary3969faqfz59lvwnxjy4j65q7es62j098'))

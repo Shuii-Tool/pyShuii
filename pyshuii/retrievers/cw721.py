@@ -51,7 +51,7 @@ class cw721(Main):
         file_name = None
         suffix = collection_metadata['suffix'] or ''
         if collection_metadata['token_uri']:
-            token_uri = collection_metadata.replace(
+            token_uri = collection_metadata['token_uri'].replace(
                 "ipfs://", "https://gateway.ipfs.io/ipfs/")
 
         #token_uri = 'https://hopegalaxy.mypinata.cloud/ipfs/QmTxetzZAqvhFrVVf1wQBx8hFrE8AnN85G5WvB489d81wV'
@@ -94,7 +94,7 @@ class cw721(Main):
                         collection_metadata['total_supply']
                     )]
                 )
-                await indexer.execute_jobs(fn=None)
+                await indexer.execute_jobs(fn=None, params={})
             else:  # on chain
                 print("Querying token ids")
                 tasks = [None]

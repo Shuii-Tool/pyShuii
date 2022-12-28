@@ -48,7 +48,7 @@ class erc721(Main):
             )]
         )
 
-        await self.indexer.execute_jobs(fn=None)
+        await self.indexer.execute_jobs(fn=None, params={})
 
         await traceCast(
             desc="Count results",
@@ -56,7 +56,7 @@ class erc721(Main):
             tasks=[{
                 'token_id': token_id,
                 'metadata': metadata
-            } for token_id, metadata in enumerate(self.indexer.results)]
+            } for token_id, metadata in self.indexer.results.items()]
         )
 
         for attributes in self.aggregate.values():

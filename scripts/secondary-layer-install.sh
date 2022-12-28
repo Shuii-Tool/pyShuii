@@ -1,0 +1,31 @@
+yum -y update
+
+# packages
+yum -y install base-devel wget
+
+# mbedtls install
+bash mbedtls-install.sh
+
+# package installation
+pip install poetry
+poetry export -f requirements.txt --without-hashes > requirements.txt
+pip install grpcio --target /asset-output/temp-packages
+#pip install -r requirements.txt -t /asset-output/temp-packages/
+#/asset-output/python/lib/python3.9/site-packages/
+
+#cp -r pyshuii /asset-output/python/lib/python3.9/site-packages/
+
+cd /asset-output
+mkdir -p python/lib/python3.9/site-packages
+cd temp-packages
+#
+cp -r googleapiclient google netaddr cytoolz coincurve ../python/lib/python3.9/site-packages
+# file cleanup
+
+cd ../python/lib/python3.9/site-packages
+rm -r *dist-info
+find . | grep -E "(/__pycache__$)" | xargs rm -rf
+cd ../../../../
+
+zip -9 -r layer.zip python
+rm -r python temp-packages

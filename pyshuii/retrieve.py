@@ -20,5 +20,5 @@ def main(project_name, tokenId):
                 return f['weights'][pos]['rank'], f['weights'][pos]
 
 
-print(main(args.collection_name, int(args.token_id)))
+#print(main(args.collection_name, int(args.token_id)))
 #print(main("blankface", 3535))

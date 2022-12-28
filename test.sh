@@ -1,1 +1,0 @@
-python3 setup.py install && python3 pyshuii/aggregate/retrievers/erc721.py

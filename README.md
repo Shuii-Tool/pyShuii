@@ -7,6 +7,11 @@ Aggregate metadata info on NFT collections
 
 Accuracy on par w/ legitimate tools afaik (May now have changed with the release of OpenRarity)
 
+# Notice(s)
+1. Using [poetry](https://python-poetry.org/docs/) for package management.
+2. Might be bugs?
+3. Using [SmartProxy](https://smartproxy.com/) for proxies.
+
 #### description
 
 Gathering info on collection, weighing rarities, and spitting into json file

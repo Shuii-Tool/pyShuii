@@ -1,10 +1,15 @@
+[metadata]
+description-file = README.md
+
+
 [tool.poetry]
 name = "pyshuii"
-version = "0.1.0"
-description = ""
+version = "0.1.1"
+description = "Multi-chain NFT metadata aggregator"
 authors = ["prathik <37804760+prmali@users.noreply.github.com>"]
 license = "MIT"
 readme = "README.md"
+
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -14,7 +19,6 @@ asyncio = "3.4.3"
 aiohttp = "3.8.1"
 tqdm = "4.64.0"
 
-[tool.poetry.group.dev.dependencies]
 
 [build-system]
 requires = ["poetry-core"]
